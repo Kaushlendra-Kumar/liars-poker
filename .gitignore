@@ -1,0 +1,25 @@
+# Go
+/backend/liars-server
+*.test
+*.out
+
+# Node / Next
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+npm-debug.log*
+
+# Deployment secrets and TLS material
+deploy/.env
+deploy/nginx/certs/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Cloudflare
+.wrangler/
+.dev.vars

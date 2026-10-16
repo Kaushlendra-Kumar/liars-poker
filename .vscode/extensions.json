@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "golang.go",
+    "bradlc.vscode-tailwindcss",
+    "dbaeumer.vscode-eslint"
+  ]
+}

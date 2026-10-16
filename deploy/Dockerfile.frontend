@@ -1,0 +1,44 @@
+# Next.js client.
+#
+# Three stages: dependencies, build, runtime. The runtime carries only the
+# standalone output, which is a minimal server plus the node_modules it
+# actually uses.
+
+FROM node:22-bookworm-slim AS deps
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+# npm ci installs exactly the lockfile, so the image matches what the tests
+# ran against.
+RUN npm ci --no-audit --no-fund
+
+FROM node:22-bookworm-slim AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY frontend/ ./
+
+# The server address is baked in at build time, because NEXT_PUBLIC_* values
+# are inlined into the client bundle. A different environment therefore needs
+# a different image, or the values must be injected by the reverse proxy
+# rather than the bundle. See DEPLOYMENT.md.
+ARG NEXT_PUBLIC_SERVER_HTTP
+ARG NEXT_PUBLIC_SERVER_WS
+ENV NEXT_PUBLIC_SERVER_HTTP=$NEXT_PUBLIC_SERVER_HTTP
+ENV NEXT_PUBLIC_SERVER_WS=$NEXT_PUBLIC_SERVER_WS
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN npx tsc --noEmit && npm test && npm run build
+
+FROM node:22-bookworm-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY --from=build /app/public ./public
+COPY --from=build --chown=node:node /app/.next/standalone ./
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+
+USER node
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+CMD ["node", "server.js"]

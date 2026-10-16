@@ -1,0 +1,40 @@
+# Authoritative game server.
+#
+# Two stages. The build stage has the Go toolchain; the runtime stage has the
+# binary, a CA bundle and nothing else, so there is no shell, no package
+# manager and nothing to pivot to if the process were ever compromised.
+
+FROM golang:1.22-bookworm AS build
+WORKDIR /src
+
+# Dependencies first, so a source change does not re-download the module
+# cache on every build.
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+
+COPY backend/ ./
+
+# The test suite is the gate: an image is never built from code that does not
+# pass it. Remove this line only if CI runs the same tests before the build.
+RUN go vet ./... && go test ./...
+
+# CGO off gives a static binary that runs on a distroless base. The build is
+# reproducible apart from the stamped version.
+ARG VERSION=dev
+RUN CGO_ENABLED=0 GOOS=linux go build \
+      -trimpath \
+      -ldflags="-s -w -X main.version=${VERSION}" \
+      -o /out/liars-server ./cmd/server
+
+FROM gcr.io/distroless/static-debian12:nonroot
+WORKDIR /
+COPY --from=build /out/liars-server /liars-server
+
+# distroless nonroot is uid 65532. The process needs no filesystem access at
+# all: rooms live in memory and nothing is written to disk.
+USER nonroot:nonroot
+EXPOSE 8080
+
+# Liveness and readiness are HTTP; the container has no shell to probe with,
+# so the orchestrator must do it over the network. See DEPLOYMENT.md.
+ENTRYPOINT ["/liars-server"]
