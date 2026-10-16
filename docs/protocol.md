@@ -117,7 +117,7 @@ engine-internal and a client frame of that type is an immediate
 
 The `PlayerID` and `Now` on `game.Meta` are filled by the server from the
 authenticated session and the server clock. A client cannot set either. This
-is what makes the 30-second budget authoritative and impersonation
+is what makes the 60-second budget authoritative and impersonation
 impossible.
 
 ### Claim wire form

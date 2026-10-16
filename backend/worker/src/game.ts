@@ -71,7 +71,7 @@ export interface Config {
 
 export function defaultConfig(seed: number): Config {
   return {
-    turnDurationMs: 30_000,
+    turnDurationMs: 60_000,
     roundEndDurationMs: 6_000,
     timeout: "AUTO_SHOW",
     disconnect: "ELIMINATE_AT_ROUND_END",

@@ -291,7 +291,7 @@ not a second rule:
 
 ## 10. Timer
 
-- Each turn has a **30-second** budget, enforced authoritatively on the
+- Each turn has a **60-second** budget, enforced authoritatively on the
   server. Client timers are display-only.
 - The consequence of expiry is `[UNRESOLVED Q8]` and is modelled behind a
   `TimeoutPolicy` enum rather than hard-coded.
@@ -304,7 +304,7 @@ not a second rule:
 - Exact elimination timing is `[UNRESOLVED Q9]` and is modelled behind a
   `DisconnectPolicy` enum.
 - A disconnected player must never be able to stall a turn beyond the
-  30-second budget.
+  60-second budget.
 
 ## 12. Information visibility
 
