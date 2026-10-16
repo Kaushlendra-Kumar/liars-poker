@@ -45,7 +45,10 @@ export interface Env {
 // Resource protection, not gameplay. The 4-9 player rule is the engine's.
 const EventRing = 256;
 const ResultLingerMs = 60_000;
-const EmptyGraceMs = 30_000;
+// A room nobody has joined yet waits long enough to share the code. Once it
+// has players, an empty room survives a phone locking or switching apps.
+const UnclaimedGraceMs = 10 * 60_000;
+const EmptyGraceMs = 5 * 60_000;
 const IdleTimeoutMs = 30 * 60_000;
 const MaxConnectionsPerRoom = 32;
 const MaxConnectionsPerPlayer = 4;
@@ -393,7 +396,7 @@ export class Room extends DurableObject<Env> {
     }
     if (this.#authed().length === 0) {
       if (d.emptySince === 0) d.emptySince = now;
-      else if (now - d.emptySince >= EmptyGraceMs) return "room empty";
+      else if (now - d.emptySince >= this.#emptyGrace()) return "room empty";
     } else {
       d.emptySince = 0;
     }
@@ -413,7 +416,7 @@ export class Room extends DurableObject<Env> {
     if (s.phase === "CLAIMING" && s.turnDeadline) at.push(s.turnDeadline);
     if (s.phase === "ROUND_END" && s.roundEndDeadline) at.push(s.roundEndDeadline);
     if (s.phase === "GAME_OVER") at.push(s.winner ? (d.endedAt || Date.now()) + ResultLingerMs : Date.now());
-    if (this.#authed().length === 0) at.push((d.emptySince || Date.now()) + EmptyGraceMs);
+    if (this.#authed().length === 0) at.push((d.emptySince || Date.now()) + this.#emptyGrace());
     const next = Math.max(Math.min(...at), Date.now() + 50);
     const current = await this.ctx.storage.getAlarm();
     if (current !== next) await this.ctx.storage.setAlarm(next);
@@ -435,6 +438,10 @@ export class Room extends DurableObject<Env> {
   }
 
   // ------------------------------------------------------------ plumbing
+
+  #emptyGrace(): number {
+    return this.#data!.state.players.length === 0 ? UnclaimedGraceMs : EmptyGraceMs;
+  }
 
   #save() {
     // Not awaited: the output gate holds outgoing messages until the write

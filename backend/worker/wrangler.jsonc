@@ -11,7 +11,7 @@
   "vars": {
     // Comma-separated browser origins allowed to connect, e.g. your Vercel
     // URL. Empty or "*" allows any origin.
-    "ALLOWED_ORIGINS": ""
+    "ALLOWED_ORIGINS": "https://liars-poker-eight.vercel.app"
   },
   "observability": { "enabled": true }
 }

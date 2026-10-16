@@ -45,6 +45,9 @@ export function Lobby({
       const body = (await res.json()) as { roomCode?: string };
       if (!body.roomCode) throw new Error("no room code returned");
       setCode(body.roomCode);
+      // Whoever creates a room is its first player, so seat them right away
+      // rather than asking for a second click.
+      onJoin(body.roomCode, name.trim() || "Player");
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "could not create a room");
     } finally {
